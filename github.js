@@ -1,0 +1,144 @@
+/**
+ * GitHub Issues API wrapper — dùng Issues làm nơi lưu & giao việc.
+ * Token của mỗi người dùng chỉ lưu trong localStorage trình duyệt của họ,
+ * không bao giờ được commit vào repo hay gửi đi nơi nào khác ngoài api.github.com.
+ */
+const GH_API = "https://api.github.com";
+const LS_KEY = "adminops_config_v1";
+
+const GitHubStore = {
+  getConfig() {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY)) || {};
+    } catch {
+      return {};
+    }
+  },
+  saveConfig(cfg) {
+    localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+  },
+  clearToken() {
+    const cfg = this.getConfig();
+    delete cfg.token;
+    this.saveConfig(cfg);
+  },
+  isConfigured() {
+    const c = this.getConfig();
+    return !!(c.owner && c.repo && c.token);
+  },
+};
+
+class GitHubAPI {
+  constructor(owner, repo, token) {
+    this.owner = owner;
+    this.repo = repo;
+    this.token = token;
+  }
+
+  async _fetch(path, opts = {}) {
+    const res = await fetch(`${GH_API}${path}`, {
+      ...opts,
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(opts.body ? { "Content-Type": "application/json" } : {}),
+        ...(opts.headers || {}),
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`GitHub API ${res.status}: ${text.slice(0, 300)}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  async testConnection() {
+    return this._fetch(`/repos/${this.owner}/${this.repo}`);
+  }
+
+  async listLabels() {
+    return this._fetch(`/repos/${this.owner}/${this.repo}/labels?per_page=100`);
+  }
+
+  async listAssignees() {
+    return this._fetch(`/repos/${this.owner}/${this.repo}/assignees?per_page=100`);
+  }
+
+  async listIssues({ state = "all" } = {}) {
+    let page = 1;
+    let all = [];
+    for (;;) {
+      const batch = await this._fetch(
+        `/repos/${this.owner}/${this.repo}/issues?state=${state}&per_page=100&page=${page}`
+      );
+      all = all.concat(batch);
+      if (batch.length < 100) break;
+      page++;
+      if (page > 10) break;
+    }
+    // filter out pull requests (Issues API also returns PRs)
+    return all.filter((i) => !i.pull_request);
+  }
+
+  async createIssue({ title, body, labels, assignees }) {
+    return this._fetch(`/repos/${this.owner}/${this.repo}/issues`, {
+      method: "POST",
+      body: JSON.stringify({ title, body, labels, assignees }),
+    });
+  }
+
+  async updateIssue(number, patch) {
+    return this._fetch(`/repos/${this.owner}/${this.repo}/issues/${number}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+  }
+
+  async createLabel(name, color, description) {
+    try {
+      return await this._fetch(`/repos/${this.owner}/${this.repo}/labels`, {
+        method: "POST",
+        body: JSON.stringify({ name, color, description }),
+      });
+    } catch (e) {
+      // label may already exist — ignore
+      return null;
+    }
+  }
+}
+
+// ---- shared task/issue body convention ----
+// **Mô tả:** ...
+// **Hạn hoàn thành:** YYYY-MM-DD
+// **Người giao việc:** <login>
+function buildIssueBody({ description, dueDate, assignedBy }) {
+  const lines = [];
+  if (description) lines.push(`**Mô tả:** ${description}`);
+  if (dueDate) lines.push(`**Hạn hoàn thành:** ${dueDate}`);
+  if (assignedBy) lines.push(`**Người giao việc:** @${assignedBy}`);
+  return lines.join("\n\n");
+}
+
+function parseIssueBody(body) {
+  const out = { description: "", dueDate: "", assignedBy: "" };
+  if (!body) return out;
+  const dueMatch = body.match(/\*\*Hạn hoàn thành:\*\*\s*(\d{4}-\d{2}-\d{2})/);
+  if (dueMatch) out.dueDate = dueMatch[1];
+  const descMatch = body.match(/\*\*Mô tả:\*\*\s*([^\n]+)/);
+  if (descMatch) out.description = descMatch[1].trim();
+  const byMatch = body.match(/\*\*Người giao việc:\*\*\s*@?(\S+)/);
+  if (byMatch) out.assignedBy = byMatch[1];
+  return out;
+}
+
+function taskStatus(issue) {
+  if (issue.state === "closed") return "done";
+  const { dueDate } = parseIssueBody(issue.body);
+  if (dueDate) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (dueDate < today) return "overdue";
+  }
+  return "open";
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AdminOps — Quản lý Công việc Hành chính</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂️</text></svg>">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">🗂️ <span>AdminOps</span><small>Quản lý công việc Hành chính</small></div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">Bảng điều khiển</button>
+    <button class="tab-btn" data-tab="tasks">Công việc</button>
+    <button class="tab-btn" data-tab="forms">Biểu mẫu</button>
+    <button class="tab-btn" data-tab="settings">Cài đặt</button>
+  </nav>
+  <div id="connStatus" class="conn-status">⚪ Chưa kết nối</div>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="tab-panel active">
+    <div class="panel-head">
+      <h1>Bảng điều khiển</h1>
+      <button id="btnRefreshDash" class="btn">🔄 Làm mới</button>
+    </div>
+    <div class="stat-grid" id="statGrid"></div>
+    <h2>Theo nhóm quy trình (SOP)</h2>
+    <div class="sop-grid" id="sopGrid"></div>
+    <h2>Sắp đến hạn / Quá hạn</h2>
+    <table class="task-table" id="dueTable">
+      <thead><tr><th>#</th><th>Tiêu đề</th><th>Nhóm</th><th>Người phụ trách</th><th>Hạn</th><th>Trạng thái</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- TASKS -->
+  <section id="tab-tasks" class="tab-panel">
+    <div class="panel-head">
+      <h1>Công việc (đồng bộ qua GitHub Issues)</h1>
+      <button id="btnNewTask" class="btn btn-primary">+ Giao việc mới</button>
+    </div>
+    <div class="filter-bar">
+      <select id="filterSop"><option value="">Tất cả nhóm SOP</option></select>
+      <select id="filterAssignee"><option value="">Tất cả người phụ trách</option></select>
+      <select id="filterState">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="open">Đang xử lý</option>
+        <option value="closed">Hoàn thành</option>
+        <option value="overdue">Quá hạn</option>
+      </select>
+      <button id="btnApplyFilter" class="btn">Lọc</button>
+    </div>
+    <table class="task-table" id="taskTable">
+      <thead><tr><th>#</th><th>Tiêu đề</th><th>Nhóm</th><th>Người phụ trách</th><th>Hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- FORMS -->
+  <section id="tab-forms" class="tab-panel">
+    <h1>Xuất biểu mẫu Word / Excel</h1>
+    <p class="muted">Biểu mẫu theo thể thức hành chính Việt Nam (quốc hiệu tiêu ngữ, chữ ký 3 bên). Có thể nạp nhanh dữ liệu từ 1 công việc đã tạo.</p>
+    <div class="form-picker">
+      <label>Loại biểu mẫu
+        <select id="formType"></select>
+      </label>
+      <label>Nạp dữ liệu từ công việc (tuỳ chọn)
+        <select id="formPrefillTask"><option value="">— Không nạp —</option></select>
+      </label>
+    </div>
+    <div id="formFieldsContainer" class="form-fields"></div>
+    <div class="form-actions">
+      <button id="btnGenerateForm" class="btn btn-primary">⬇️ Tải xuống</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" class="tab-panel">
+    <h1>Cài đặt kết nối GitHub</h1>
+    <p class="muted">Dữ liệu công việc được lưu dưới dạng GitHub Issues trên repo của công ty. Mỗi người dùng tự nhập Access Token của mình — token chỉ lưu trong trình duyệt của bạn (localStorage), không gửi đi đâu khác ngoài api.github.com.</p>
+    <form id="settingsForm" class="settings-form">
+      <label>Tên công ty (hiển thị trên biểu mẫu) <input type="text" id="cfgCompany" placeholder="ví dụ: CÔNG TY TNHH ABC" /></label>
+      <label>Chủ repo (owner) <input type="text" id="cfgOwner" placeholder="ví dụ: mt-duy" required /></label>
+      <label>Tên repo <input type="text" id="cfgRepo" placeholder="ví dụ: AdminOps" required /></label>
+      <label>Personal Access Token (fine-grained, quyền Issues: Read & Write)
+        <input type="password" id="cfgToken" placeholder="github_pat_..." required /></label>
+      <div class="settings-actions">
+        <button type="submit" class="btn btn-primary">💾 Lưu & Kết nối</button>
+        <button type="button" id="btnTestConn" class="btn">🔌 Kiểm tra kết nối</button>
+        <button type="button" id="btnClearToken" class="btn btn-danger">🗑️ Xoá token khỏi trình duyệt</button>
+      </div>
+    </form>
+    <details class="help-box">
+      <summary>Hướng dẫn tạo Personal Access Token (1 lần)</summary>
+      <ol>
+        <li>Vào GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
+        <li>Repository access: chọn đúng repo này (không chọn "All repositories").</li>
+        <li>Permissions → Issues: chọn "Read and write". (Không cần quyền nào khác.)</li>
+        <li>Tạo token, copy và dán vào ô trên. Token chỉ hoạt động cho riêng repo này.</li>
+      </ol>
+    </details>
+  </section>
+</main>
+
+<div id="modalRoot"></div>
+
+<script src="github.js"></script>
+<script src="templates.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

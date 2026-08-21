@@ -293,7 +293,7 @@ document.getElementById("settingsForm").addEventListener("submit", async (e) => 
     company: document.getElementById("cfgCompany").value.trim(),
     owner: document.getElementById("cfgOwner").value.trim(),
     repo: document.getElementById("cfgRepo").value.trim(),
-    token: document.getElementById("cfgToken").value.trim(),
+    token: document.getElementById("cfgToken").value.replace(/\s+/g, ""),
   };
   GitHubStore.saveConfig(cfg);
   await tryConnect(true);
@@ -303,7 +303,7 @@ document.getElementById("btnTestConn").addEventListener("click", async () => {
     company: document.getElementById("cfgCompany").value.trim(),
     owner: document.getElementById("cfgOwner").value.trim(),
     repo: document.getElementById("cfgRepo").value.trim(),
-    token: document.getElementById("cfgToken").value.trim(),
+    token: document.getElementById("cfgToken").value.replace(/\s+/g, ""),
   };
   GitHubStore.saveConfig(cfg);
   const ok = await tryConnect(true);

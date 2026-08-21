@@ -36,16 +36,26 @@ class GitHubAPI {
   }
 
   async _fetch(path, opts = {}) {
-    const res = await fetch(`${GH_API}${path}`, {
-      ...opts,
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        ...(opts.body ? { "Content-Type": "application/json" } : {}),
-        ...(opts.headers || {}),
-      },
-    });
+    let res;
+    try {
+      res = await fetch(`${GH_API}${path}`, {
+        ...opts,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/vnd.github+json",
+          ...(opts.body ? { "Content-Type": "application/json" } : {}),
+          ...(opts.headers || {}),
+        },
+      });
+    } catch (networkErr) {
+      // Browsers (esp. Safari) collapse network/CORS failures into a vague
+      // "TypeError: Type error" with no useful detail — surface a hint instead.
+      throw new Error(
+        "Không gọi được api.github.com (lỗi mạng/CORS hoặc bị trình duyệt/tiện ích chặn). " +
+        "Hãy kiểm tra kết nối mạng, tắt trình chặn quảng cáo/VPN thử lại, hoặc thử trình duyệt khác (Chrome). " +
+        "Chi tiết: " + (networkErr && networkErr.message)
+      );
+    }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(`GitHub API ${res.status}: ${text.slice(0, 300)}`);

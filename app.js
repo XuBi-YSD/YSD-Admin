@@ -1,13 +1,17 @@
 const SOP_GROUPS = [
-  { key: "SOP1-VanPhong", name: "SOP #1 — Văn phòng & Cơ sở vật chất" },
-  { key: "SOP2-TaiSan", name: "SOP #2 — Tài sản & Mua sắm" },
-  { key: "SOP3-VanThu", name: "SOP #3 — Văn thư, Con dấu & Lưu trữ" },
-  { key: "SOP4-Xe", name: "SOP #4 — Xe đưa đón & Công tác" },
-  { key: "SOP5-ATLD", name: "SOP #5 — An toàn Lao động & PCCC" },
-  { key: "SOP6-NhanSu", name: "SOP #6 — Phối hợp Hành chính - Nhân sự" },
-  { key: "SOP7-LeTan", name: "SOP #7 — Lễ tân & Sự kiện" },
-  { key: "SOP8-NCC", name: "SOP #8 — Nhà cung cấp, Ngân sách & Báo cáo" },
+  { key: "SOP1-VanPhong", tkey: "sop.1" },
+  { key: "SOP2-TaiSan", tkey: "sop.2" },
+  { key: "SOP3-VanThu", tkey: "sop.3" },
+  { key: "SOP4-Xe", tkey: "sop.4" },
+  { key: "SOP5-ATLD", tkey: "sop.5" },
+  { key: "SOP6-NhanSu", tkey: "sop.6" },
+  { key: "SOP7-LeTan", tkey: "sop.7" },
+  { key: "SOP8-NCC", tkey: "sop.8" },
 ];
+function sopName(key) {
+  const g = SOP_GROUPS.find((g) => g.key === key);
+  return g ? t(g.tkey) : key;
+}
 
 let api = null;
 let currentUser = null;
@@ -26,6 +30,14 @@ function switchTab(tab) {
   if (tab === "forms") renderFormsTab();
 }
 
+// called by i18n.js whenever the language toggle changes
+function onLangChange() {
+  populateFilterOptions();
+  renderDashboard();
+  if (document.getElementById("tab-tasks").classList.contains("active")) renderTasks();
+  if (document.getElementById("tab-forms").classList.contains("active")) renderFormsTab();
+}
+
 // ---------------- init / connection ----------------
 function initApi() {
   const cfg = GitHubStore.getConfig();
@@ -40,19 +52,19 @@ function initApi() {
 async function tryConnect(showAlert) {
   const statusEl = document.getElementById("connStatus");
   if (!initApi()) {
-    statusEl.textContent = "⚪ Chưa kết nối — vào Cài đặt";
+    statusEl.textContent = t("conn.none_goto_settings");
     return false;
   }
-  statusEl.textContent = "🟡 Đang kết nối...";
+  statusEl.textContent = t("conn.connecting");
   try {
     const repoInfo = await api.testConnection();
     currentUser = repoInfo.owner ? repoInfo.owner.login : null;
-    statusEl.textContent = `🟢 Đã kết nối: ${repoInfo.full_name}`;
+    statusEl.textContent = t("conn.connected", { repo: repoInfo.full_name });
     await loadAll();
     return true;
   } catch (e) {
-    statusEl.textContent = "🔴 Lỗi kết nối";
-    if (showAlert) alert("Không kết nối được GitHub:\n" + e.message);
+    statusEl.textContent = t("conn.error");
+    if (showAlert) alert(t("alert.connectFail", { msg: e.message }));
     return false;
   }
 }
@@ -70,9 +82,9 @@ async function loadAll() {
 
 function populateFilterOptions() {
   const sopSel = document.getElementById("filterSop");
-  sopSel.innerHTML = '<option value="">Tất cả nhóm SOP</option>' + SOP_GROUPS.map((g) => `<option value="${g.key}">${g.name}</option>`).join("");
+  sopSel.innerHTML = `<option value="">${t("tasks.filterAllSop")}</option>` + SOP_GROUPS.map((g) => `<option value="${g.key}">${sopName(g.key)}</option>`).join("");
   const asSel = document.getElementById("filterAssignee");
-  asSel.innerHTML = '<option value="">Tất cả người phụ trách</option>' + allAssignees.map((a) => `<option value="${a.login}">${a.login}</option>`).join("");
+  asSel.innerHTML = `<option value="">${t("tasks.filterAllAssignee")}</option>` + allAssignees.map((a) => `<option value="${a.login}">${a.login}</option>`).join("");
 }
 
 // ---------------- dashboard ----------------
@@ -82,15 +94,15 @@ function renderDashboard() {
   const overdue = allIssues.filter((i) => taskStatus(i) === "overdue").length;
   const open = total - done;
   document.getElementById("statGrid").innerHTML = [
-    ["Tổng công việc", total],
-    ["Đang xử lý", open],
-    ["Hoàn thành", done],
-    ["Quá hạn", overdue],
+    [t("dash.stat.total"), total],
+    [t("dash.stat.open"), open],
+    [t("dash.stat.done"), done],
+    [t("dash.stat.overdue"), overdue],
   ].map(([lbl, num]) => `<div class="stat-card"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>`).join("");
 
   document.getElementById("sopGrid").innerHTML = SOP_GROUPS.map((g) => {
     const count = allIssues.filter((i) => i.labels.some((l) => (l.name || l) === g.key) && i.state === "open").length;
-    return `<div class="sop-card"><div class="name">${g.name}</div><div class="count">${count} việc đang xử lý</div></div>`;
+    return `<div class="sop-card"><div class="name">${sopName(g.key)}</div><div class="count">${count} ${t("dash.sopCount")}</div></div>`;
   }).join("");
 
   const dueSoon = allIssues
@@ -99,7 +111,7 @@ function renderDashboard() {
     .filter((x) => x.dueDate)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     .slice(0, 10);
-  document.querySelector("#dueTable tbody").innerHTML = dueSoon.map((x) => taskRow(x.issue)).join("") || `<tr><td colspan="6" class="muted">Không có công việc nào có hạn.</td></tr>`;
+  document.querySelector("#dueTable tbody").innerHTML = dueSoon.map((x) => taskRow(x.issue)).join("") || `<tr><td colspan="6" class="muted">${t("dash.noDue")}</td></tr>`;
 }
 
 // ---------------- tasks ----------------
@@ -107,15 +119,11 @@ function sopLabelOf(issue) {
   const l = issue.labels.find((l) => SOP_GROUPS.some((g) => g.key === (l.name || l)));
   return l ? (l.name || l) : "";
 }
-function sopNameOf(key) {
-  const g = SOP_GROUPS.find((g) => g.key === key);
-  return g ? g.name.replace(/^SOP #\d+ — /, "") : key;
-}
 function statusBadge(issue) {
   const st = taskStatus(issue);
-  if (st === "done") return '<span class="badge badge-done">Hoàn thành</span>';
-  if (st === "overdue") return '<span class="badge badge-overdue">Quá hạn</span>';
-  return '<span class="badge badge-open">Đang xử lý</span>';
+  if (st === "done") return `<span class="badge badge-done">${t("status.done")}</span>`;
+  if (st === "overdue") return `<span class="badge badge-overdue">${t("status.overdue")}</span>`;
+  return `<span class="badge badge-open">${t("status.open")}</span>`;
 }
 function taskRow(issue, withActions) {
   const { dueDate } = parseIssueBody(issue.body);
@@ -123,16 +131,16 @@ function taskRow(issue, withActions) {
   return `<tr>
     <td>#${issue.number}</td>
     <td><a href="${issue.html_url}" target="_blank" rel="noopener">${escapeHtml(issue.title)}</a></td>
-    <td>${escapeHtml(sopNameOf(sopLabelOf(issue)))}</td>
+    <td>${escapeHtml(sopName(sopLabelOf(issue)))}</td>
     <td>${escapeHtml(assignee)}</td>
     <td>${dueDate || "—"}</td>
     <td>${statusBadge(issue)}</td>
-    ${withActions ? `<td>${issue.state === "open" ? `<button class="btn" onclick="markDone(${issue.number})">✅ Hoàn thành</button>` : `<button class="btn" onclick="reopenTask(${issue.number})">↩️ Mở lại</button>`}</td>` : ""}
+    ${withActions ? `<td>${issue.state === "open" ? `<button class="btn" onclick="markDone(${issue.number})">${t("tasks.markDone")}</button>` : `<button class="btn" onclick="reopenTask(${issue.number})">${t("tasks.reopen")}</button>`}</td>` : ""}
   </tr>`;
 }
 
 function renderTasks() {
-  if (!api) { document.querySelector("#taskTable tbody").innerHTML = `<tr><td colspan="7" class="muted">Chưa kết nối GitHub — vào tab Cài đặt.</td></tr>`; return; }
+  if (!api) { document.querySelector("#taskTable tbody").innerHTML = `<tr><td colspan="7" class="muted">${t("tasks.notConnected")}</td></tr>`; return; }
   const sopFilter = document.getElementById("filterSop").value;
   const assigneeFilter = document.getElementById("filterAssignee").value;
   const stateFilter = document.getElementById("filterState").value;
@@ -143,7 +151,7 @@ function renderTasks() {
   if (stateFilter === "closed") list = list.filter((i) => i.state === "closed");
   if (stateFilter === "overdue") list = list.filter((i) => taskStatus(i) === "overdue");
   list.sort((a, b) => b.number - a.number);
-  document.querySelector("#taskTable tbody").innerHTML = list.map((i) => taskRow(i, true)).join("") || `<tr><td colspan="7" class="muted">Không có công việc phù hợp.</td></tr>`;
+  document.querySelector("#taskTable tbody").innerHTML = list.map((i) => taskRow(i, true)).join("") || `<tr><td colspan="7" class="muted">${t("tasks.empty")}</td></tr>`;
 }
 document.getElementById("btnApplyFilter").addEventListener("click", renderTasks);
 
@@ -161,35 +169,35 @@ async function reopenTask(number) {
 // ---- new task modal ----
 document.getElementById("btnNewTask").addEventListener("click", openNewTaskModal);
 function openNewTaskModal() {
-  if (!api) { alert("Vui lòng kết nối GitHub ở tab Cài đặt trước."); return; }
+  if (!api) { alert(t("alert.needConnect")); return; }
   const root = document.getElementById("modalRoot");
   root.innerHTML = `
   <div class="modal-backdrop" id="backdrop">
     <div class="modal">
-      <h2>Giao việc mới</h2>
+      <h2>${t("modal.newTask.title")}</h2>
       <div class="form-fields">
-        <label class="full">Tiêu đề công việc
+        <label class="full">${t("modal.newTask.taskTitle")}
           <input id="ntTitle" type="text" required />
         </label>
-        <label>Nhóm SOP
-          <select id="ntSop">${SOP_GROUPS.map((g) => `<option value="${g.key}">${g.name}</option>`).join("")}</select>
+        <label>${t("modal.newTask.sop")}
+          <select id="ntSop">${SOP_GROUPS.map((g) => `<option value="${g.key}">${sopName(g.key)}</option>`).join("")}</select>
         </label>
-        <label>Người phụ trách
+        <label>${t("modal.newTask.assignee")}
           <select id="ntAssignee">
-            <option value="">— Không gán —</option>
+            <option value="">${t("modal.newTask.noAssignee")}</option>
             ${allAssignees.map((a) => `<option value="${a.login}">${a.login}</option>`).join("")}
           </select>
         </label>
-        <label>Hạn hoàn thành
+        <label>${t("modal.newTask.due")}
           <input id="ntDue" type="date" />
         </label>
-        <label class="full">Mô tả
+        <label class="full">${t("modal.newTask.desc")}
           <textarea id="ntDesc" rows="3"></textarea>
         </label>
       </div>
       <div class="modal-actions">
-        <button class="btn" id="ntCancel">Huỷ</button>
-        <button class="btn btn-primary" id="ntSubmit">Tạo công việc</button>
+        <button class="btn" id="ntCancel">${t("modal.cancel")}</button>
+        <button class="btn btn-primary" id="ntSubmit">${t("modal.newTask.submit")}</button>
       </div>
     </div>
   </div>`;
@@ -197,7 +205,7 @@ function openNewTaskModal() {
   document.getElementById("backdrop").addEventListener("click", (e) => { if (e.target.id === "backdrop") root.innerHTML = ""; });
   document.getElementById("ntSubmit").onclick = async () => {
     const title = document.getElementById("ntTitle").value.trim();
-    if (!title) { alert("Vui lòng nhập tiêu đề."); return; }
+    if (!title) { alert(t("alert.needTitle")); return; }
     const sop = document.getElementById("ntSop").value;
     const assignee = document.getElementById("ntAssignee").value;
     const due = document.getElementById("ntDue").value;
@@ -209,7 +217,7 @@ function openNewTaskModal() {
       await loadAll();
       renderTasks();
     } catch (e) {
-      alert("Không tạo được công việc:\n" + e.message);
+      alert(t("alert.createFail", { msg: e.message }));
     }
   };
 }
@@ -217,14 +225,19 @@ function openNewTaskModal() {
 // ---------------- forms tab ----------------
 function renderFormsTab() {
   const sel = document.getElementById("formType");
-  if (!sel.dataset.filled) {
-    sel.innerHTML = FORM_DEFS.map((f) => `<option value="${f.id}">${f.label}</option>`).join("");
-    sel.dataset.filled = "1";
-    sel.addEventListener("change", renderFormFields);
-  }
+  const prevVal = sel.value;
+  sel.innerHTML = FORM_DEFS.map((f) => `<option value="${f.id}">${formLabel(f)}</option>`).join("");
+  if (prevVal) sel.value = prevVal;
+  sel.onchange = renderFormFields;
   const prefillSel = document.getElementById("formPrefillTask");
-  prefillSel.innerHTML = '<option value="">— Không nạp —</option>' + allIssues.filter((i) => i.state === "open").map((i) => `<option value="${i.number}">#${i.number} ${escapeHtml(i.title)}</option>`).join("");
+  prefillSel.innerHTML = `<option value="">${t("forms.noPrefill")}</option>` + allIssues.filter((i) => i.state === "open").map((i) => `<option value="${i.number}">#${i.number} ${escapeHtml(i.title)}</option>`).join("");
   renderFormFields();
+}
+function formLabel(def) {
+  return getLang() === "en" && def.labelEn ? def.labelEn : def.label;
+}
+function fieldLabel(f) {
+  return getLang() === "en" && f.labelEn ? f.labelEn : f.label;
 }
 
 function renderFormFields() {
@@ -232,9 +245,10 @@ function renderFormFields() {
   const container = document.getElementById("formFieldsContainer");
   container.innerHTML = def.fields.map((f) => {
     const fullCls = f.full ? "full" : "";
-    if (f.type === "textarea") return `<label class="${fullCls}">${f.label}<textarea id="ff_${f.key}" rows="3"></textarea></label>`;
-    if (f.type === "select") return `<label class="${fullCls}">${f.label}<select id="ff_${f.key}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></label>`;
-    return `<label class="${fullCls}">${f.label}<input id="ff_${f.key}" type="${f.type === "date" ? "date" : "text"}" placeholder="${f.placeholder || ""}" /></label>`;
+    const lbl = fieldLabel(f);
+    if (f.type === "textarea") return `<label class="${fullCls}">${lbl}<textarea id="ff_${f.key}" rows="3"></textarea></label>`;
+    if (f.type === "select") return `<label class="${fullCls}">${lbl}<select id="ff_${f.key}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></label>`;
+    return `<label class="${fullCls}">${lbl}<input id="ff_${f.key}" type="${f.type === "date" ? "date" : "text"}" placeholder="${f.placeholder || ""}" /></label>`;
   }).join("");
 }
 
@@ -258,9 +272,9 @@ document.getElementById("btnGenerateForm").addEventListener("click", () => {
   def.fields.forEach((f) => {
     const el = document.getElementById("ff_" + f.key);
     data[f.key] = el ? el.value : "";
-    if (f.required && !data[f.key]) missing.push(f.label);
+    if (f.required && !data[f.key]) missing.push(fieldLabel(f));
   });
-  if (missing.length) { alert("Vui lòng nhập: " + missing.join(", ")); return; }
+  if (missing.length) { alert(t("alert.missingFields", { fields: missing.join(", ") })); return; }
   const cfg = GitHubStore.getConfig();
   def.generate(data, { company: cfg.company || "", formCode: "" });
 });
@@ -293,19 +307,21 @@ document.getElementById("btnTestConn").addEventListener("click", async () => {
   };
   GitHubStore.saveConfig(cfg);
   const ok = await tryConnect(true);
-  if (ok) alert("Kết nối thành công!");
+  if (ok) alert(t("alert.connectOk"));
 });
 document.getElementById("btnClearToken").addEventListener("click", () => {
-  if (!confirm("Xoá token khỏi trình duyệt này?")) return;
+  if (!confirm(t("alert.confirmClearToken"))) return;
   GitHubStore.clearToken();
   document.getElementById("cfgToken").value = "";
   api = null;
-  document.getElementById("connStatus").textContent = "⚪ Chưa kết nối";
+  document.getElementById("connStatus").textContent = t("conn.none");
 });
 document.getElementById("btnRefreshDash").addEventListener("click", loadAll);
 
 // ---------------- boot ----------------
 (function boot() {
+  applyStaticTranslations();
+  document.querySelectorAll(".lang-btn").forEach((b) => b.classList.toggle("active", b.dataset.lang === getLang()));
   loadSettingsForm();
   renderDashboard();
   tryConnect(false);

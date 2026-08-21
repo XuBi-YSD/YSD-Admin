@@ -105,14 +105,15 @@ const FORM_DEFS = [
   {
     id: "purchase_request",
     label: "Phiếu đề nghị mua sắm (SOP #2)",
+    labelEn: "Purchase Request Form (SOP #2)",
     kind: "doc",
     fields: [
-      { key: "department", label: "Phòng ban đề nghị", type: "text", required: true },
-      { key: "requester", label: "Người đề nghị", type: "text", required: true },
-      { key: "itemName", label: "Tên hàng hoá / dịch vụ", type: "text", required: true },
-      { key: "quantity", label: "Số lượng", type: "text" },
-      { key: "estCost", label: "Chi phí dự kiến (VNĐ)", type: "text" },
-      { key: "reason", label: "Lý do đề nghị", type: "textarea", full: true },
+      { key: "department", label: "Phòng ban đề nghị", labelEn: "Requesting department", type: "text", required: true },
+      { key: "requester", label: "Người đề nghị", labelEn: "Requester", type: "text", required: true },
+      { key: "itemName", label: "Tên hàng hoá / dịch vụ", labelEn: "Item / service name", type: "text", required: true },
+      { key: "quantity", label: "Số lượng", labelEn: "Quantity", type: "text" },
+      { key: "estCost", label: "Chi phí dự kiến (VNĐ)", labelEn: "Estimated cost (VND)", type: "text" },
+      { key: "reason", label: "Lý do đề nghị", labelEn: "Reason", type: "textarea", full: true },
     ],
     generate(d, ctx) {
       const body = `
@@ -134,12 +135,13 @@ const FORM_DEFS = [
   {
     id: "repair_request",
     label: "Phiếu yêu cầu sửa chữa (SOP #1)",
+    labelEn: "Repair Request Form (SOP #1)",
     kind: "doc",
     fields: [
-      { key: "location", label: "Vị trí / khu vực", type: "text", required: true },
-      { key: "requester", label: "Người báo hỏng", type: "text", required: true },
-      { key: "issue", label: "Mô tả sự cố / hư hỏng", type: "textarea", full: true, required: true },
-      { key: "priority", label: "Mức ưu tiên", type: "select", options: ["Bình thường", "Khẩn cấp"] },
+      { key: "location", label: "Vị trí / khu vực", labelEn: "Location / area", type: "text", required: true },
+      { key: "requester", label: "Người báo hỏng", labelEn: "Reported by", type: "text", required: true },
+      { key: "issue", label: "Mô tả sự cố / hư hỏng", labelEn: "Issue description", type: "textarea", full: true, required: true },
+      { key: "priority", label: "Mức ưu tiên", labelEn: "Priority", type: "select", options: ["Bình thường", "Khẩn cấp"] },
     ],
     generate(d, ctx) {
       const body = `
@@ -159,14 +161,15 @@ const FORM_DEFS = [
   {
     id: "travel_request",
     label: "Đề nghị đi công tác (SOP #4)",
+    labelEn: "Business Travel Request (SOP #4)",
     kind: "doc",
     fields: [
-      { key: "employee", label: "Họ tên nhân viên", type: "text", required: true },
-      { key: "destination", label: "Nơi công tác", type: "text", required: true },
-      { key: "fromDate", label: "Từ ngày", type: "date", required: true },
-      { key: "toDate", label: "Đến ngày", type: "date", required: true },
-      { key: "purpose", label: "Mục đích công tác", type: "textarea", full: true },
-      { key: "budget", label: "Ngân sách dự kiến (VNĐ)", type: "text" },
+      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "text", required: true },
+      { key: "destination", label: "Nơi công tác", labelEn: "Destination", type: "text", required: true },
+      { key: "fromDate", label: "Từ ngày", labelEn: "From date", type: "date", required: true },
+      { key: "toDate", label: "Đến ngày", labelEn: "To date", type: "date", required: true },
+      { key: "purpose", label: "Mục đích công tác", labelEn: "Purpose", type: "textarea", full: true },
+      { key: "budget", label: "Ngân sách dự kiến (VNĐ)", labelEn: "Estimated budget (VND)", type: "text" },
     ],
     generate(d, ctx) {
       const body = `
@@ -187,13 +190,14 @@ const FORM_DEFS = [
   {
     id: "advance_request",
     label: "Giấy đề nghị tạm ứng",
+    labelEn: "Cash Advance Request",
     kind: "doc",
     fields: [
-      { key: "employee", label: "Họ tên người đề nghị", type: "text", required: true },
-      { key: "department", label: "Bộ phận", type: "text" },
-      { key: "amount", label: "Số tiền đề nghị tạm ứng (VNĐ)", type: "text", required: true },
-      { key: "amountWords", label: "Số tiền bằng chữ", type: "text" },
-      { key: "reason", label: "Lý do tạm ứng", type: "textarea", full: true },
+      { key: "employee", label: "Họ tên người đề nghị", labelEn: "Requester name", type: "text", required: true },
+      { key: "department", label: "Bộ phận", labelEn: "Department", type: "text" },
+      { key: "amount", label: "Số tiền đề nghị tạm ứng (VNĐ)", labelEn: "Advance amount (VND)", type: "text", required: true },
+      { key: "amountWords", label: "Số tiền bằng chữ", labelEn: "Amount in words", type: "text" },
+      { key: "reason", label: "Lý do tạm ứng", labelEn: "Reason", type: "textarea", full: true },
     ],
     generate(d, ctx) {
       const body = `
@@ -214,12 +218,13 @@ const FORM_DEFS = [
   {
     id: "handover_minutes",
     label: "Biên bản bàn giao",
+    labelEn: "Handover Minutes",
     kind: "doc",
     fields: [
-      { key: "partyA", label: "Bên giao", type: "text", required: true },
-      { key: "partyB", label: "Bên nhận", type: "text", required: true },
-      { key: "content", label: "Nội dung bàn giao", type: "textarea", full: true, required: true },
-      { key: "location", label: "Địa điểm bàn giao", type: "text" },
+      { key: "partyA", label: "Bên giao", labelEn: "Handing-over party", type: "text", required: true },
+      { key: "partyB", label: "Bên nhận", labelEn: "Receiving party", type: "text", required: true },
+      { key: "content", label: "Nội dung bàn giao", labelEn: "Handover content", type: "textarea", full: true, required: true },
+      { key: "location", label: "Địa điểm bàn giao", labelEn: "Location", type: "text" },
     ],
     generate(d, ctx) {
       const body = `
@@ -240,11 +245,12 @@ const FORM_DEFS = [
   {
     id: "meeting_minutes",
     label: "Biên bản họp / làm việc",
+    labelEn: "Meeting Minutes",
     kind: "doc",
     fields: [
-      { key: "topic", label: "Nội dung cuộc họp", type: "text", required: true },
-      { key: "attendees", label: "Thành phần tham dự", type: "textarea", full: true },
-      { key: "content", label: "Nội dung / Kết luận", type: "textarea", full: true, required: true },
+      { key: "topic", label: "Nội dung cuộc họp", labelEn: "Meeting topic", type: "text", required: true },
+      { key: "attendees", label: "Thành phần tham dự", labelEn: "Attendees", type: "textarea", full: true },
+      { key: "content", label: "Nội dung / Kết luận", labelEn: "Content / Conclusion", type: "textarea", full: true, required: true },
     ],
     generate(d, ctx) {
       const body = `
@@ -264,11 +270,12 @@ const FORM_DEFS = [
   {
     id: "timekeeping_sheet",
     label: "Bảng chấm công tháng (Excel)",
+    labelEn: "Monthly Timekeeping Sheet (Excel)",
     kind: "xls",
     fields: [
-      { key: "employee", label: "Họ tên nhân viên", type: "text", required: true },
-      { key: "department", label: "Bộ phận", type: "text" },
-      { key: "month", label: "Tháng", type: "text", placeholder: "vd: 08/2026", required: true },
+      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "text", required: true },
+      { key: "department", label: "Bộ phận", labelEn: "Department", type: "text" },
+      { key: "month", label: "Tháng", labelEn: "Month", type: "text", placeholder: "vd: 08/2026", required: true },
     ],
     generate(d, ctx) {
       const [mm, yyyy] = (d.month || "").split("/");
@@ -291,11 +298,12 @@ const FORM_DEFS = [
   {
     id: "inventory_count",
     label: "Biên bản kiểm kê tài sản (Excel)",
+    labelEn: "Asset Inventory Count Sheet (Excel)",
     kind: "xls",
     fields: [
-      { key: "team", label: "Tổ kiểm kê", type: "text" },
-      { key: "department", label: "Bộ phận / khu vực", type: "text", required: true },
-      { key: "items", label: "Danh sách tài sản (mỗi dòng: Tên, Mã, SL sổ sách, SL thực tế)", type: "textarea", full: true },
+      { key: "team", label: "Tổ kiểm kê", labelEn: "Inventory team", type: "text" },
+      { key: "department", label: "Bộ phận / khu vực", labelEn: "Department / area", type: "text", required: true },
+      { key: "items", label: "Danh sách tài sản (mỗi dòng: Tên, Mã, SL sổ sách, SL thực tế)", labelEn: "Asset list (one per line: Name, Code, Book qty, Actual qty)", type: "textarea", full: true },
     ],
     generate(d, ctx) {
       const rows = (d.items || "").split("\n").filter((l) => l.trim()).map((line) => {

@@ -9,29 +9,36 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">🗂️ <span>AdminOps</span><small>Quản lý công việc Hành chính</small></div>
+  <div class="brand">🗂️ <span>AdminOps</span><small data-i18n="brand.subtitle">Quản lý công việc Hành chính</small></div>
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="dashboard">Bảng điều khiển</button>
-    <button class="tab-btn" data-tab="tasks">Công việc</button>
-    <button class="tab-btn" data-tab="forms">Biểu mẫu</button>
-    <button class="tab-btn" data-tab="settings">Cài đặt</button>
+    <button class="tab-btn active" data-tab="dashboard" data-i18n="nav.dashboard">Bảng điều khiển</button>
+    <button class="tab-btn" data-tab="tasks" data-i18n="nav.tasks">Công việc</button>
+    <button class="tab-btn" data-tab="forms" data-i18n="nav.forms">Biểu mẫu</button>
+    <button class="tab-btn" data-tab="settings" data-i18n="nav.settings">Cài đặt</button>
   </nav>
-  <div id="connStatus" class="conn-status">⚪ Chưa kết nối</div>
+  <div class="lang-switch">
+    <button class="lang-btn active" data-lang="vi" onclick="setLang('vi')">VI</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+  </div>
+  <div id="connStatus" class="conn-status" data-i18n="conn.none">⚪ Chưa kết nối</div>
 </header>
 
 <main>
   <!-- DASHBOARD -->
   <section id="tab-dashboard" class="tab-panel active">
     <div class="panel-head">
-      <h1>Bảng điều khiển</h1>
-      <button id="btnRefreshDash" class="btn">🔄 Làm mới</button>
+      <h1 data-i18n="dash.title">Bảng điều khiển</h1>
+      <button id="btnRefreshDash" class="btn" data-i18n="dash.refresh">🔄 Làm mới</button>
     </div>
     <div class="stat-grid" id="statGrid"></div>
-    <h2>Theo nhóm quy trình (SOP)</h2>
+    <h2 data-i18n="dash.bySop">Theo nhóm quy trình (SOP)</h2>
     <div class="sop-grid" id="sopGrid"></div>
-    <h2>Sắp đến hạn / Quá hạn</h2>
+    <h2 data-i18n="dash.dueSoon">Sắp đến hạn / Quá hạn</h2>
     <table class="task-table" id="dueTable">
-      <thead><tr><th>#</th><th>Tiêu đề</th><th>Nhóm</th><th>Người phụ trách</th><th>Hạn</th><th>Trạng thái</th></tr></thead>
+      <thead><tr>
+        <th data-i18n="col.no">#</th><th data-i18n="col.title">Tiêu đề</th><th data-i18n="col.group">Nhóm</th>
+        <th data-i18n="col.assignee">Người phụ trách</th><th data-i18n="col.due">Hạn</th><th data-i18n="col.status">Trạng thái</th>
+      </tr></thead>
       <tbody></tbody>
     </table>
   </section>
@@ -39,67 +46,71 @@
   <!-- TASKS -->
   <section id="tab-tasks" class="tab-panel">
     <div class="panel-head">
-      <h1>Công việc (đồng bộ qua GitHub Issues)</h1>
-      <button id="btnNewTask" class="btn btn-primary">+ Giao việc mới</button>
+      <h1 data-i18n="tasks.title">Công việc (đồng bộ qua GitHub Issues)</h1>
+      <button id="btnNewTask" class="btn btn-primary" data-i18n="tasks.newBtn">+ Giao việc mới</button>
     </div>
     <div class="filter-bar">
-      <select id="filterSop"><option value="">Tất cả nhóm SOP</option></select>
-      <select id="filterAssignee"><option value="">Tất cả người phụ trách</option></select>
+      <select id="filterSop"><option value="" data-i18n="tasks.filterAllSop">Tất cả nhóm SOP</option></select>
+      <select id="filterAssignee"><option value="" data-i18n="tasks.filterAllAssignee">Tất cả người phụ trách</option></select>
       <select id="filterState">
-        <option value="all">Tất cả trạng thái</option>
-        <option value="open">Đang xử lý</option>
-        <option value="closed">Hoàn thành</option>
-        <option value="overdue">Quá hạn</option>
+        <option value="all" data-i18n="tasks.filterAllState">Tất cả trạng thái</option>
+        <option value="open" data-i18n="tasks.filterOpen">Đang xử lý</option>
+        <option value="closed" data-i18n="tasks.filterClosed">Hoàn thành</option>
+        <option value="overdue" data-i18n="tasks.filterOverdue">Quá hạn</option>
       </select>
-      <button id="btnApplyFilter" class="btn">Lọc</button>
+      <button id="btnApplyFilter" class="btn" data-i18n="tasks.filterBtn">Lọc</button>
     </div>
     <table class="task-table" id="taskTable">
-      <thead><tr><th>#</th><th>Tiêu đề</th><th>Nhóm</th><th>Người phụ trách</th><th>Hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr>
+        <th data-i18n="col.no">#</th><th data-i18n="col.title">Tiêu đề</th><th data-i18n="col.group">Nhóm</th>
+        <th data-i18n="col.assignee">Người phụ trách</th><th data-i18n="col.due">Hạn</th><th data-i18n="col.status">Trạng thái</th>
+        <th data-i18n="col.action">Thao tác</th>
+      </tr></thead>
       <tbody></tbody>
     </table>
   </section>
 
   <!-- FORMS -->
   <section id="tab-forms" class="tab-panel">
-    <h1>Xuất biểu mẫu Word / Excel</h1>
-    <p class="muted">Biểu mẫu theo thể thức hành chính Việt Nam (quốc hiệu tiêu ngữ, chữ ký 3 bên). Có thể nạp nhanh dữ liệu từ 1 công việc đã tạo.</p>
+    <h1 data-i18n="forms.title">Xuất biểu mẫu Word / Excel</h1>
+    <p class="muted" data-i18n="forms.desc">Biểu mẫu theo thể thức hành chính Việt Nam (quốc hiệu tiêu ngữ, chữ ký 3 bên). Có thể nạp nhanh dữ liệu từ 1 công việc đã tạo. Nội dung biểu mẫu luôn bằng tiếng Việt theo quy định.</p>
     <div class="form-picker">
-      <label>Loại biểu mẫu
+      <label><span data-i18n="forms.typeLabel">Loại biểu mẫu</span>
         <select id="formType"></select>
       </label>
-      <label>Nạp dữ liệu từ công việc (tuỳ chọn)
-        <select id="formPrefillTask"><option value="">— Không nạp —</option></select>
+      <label><span data-i18n="forms.prefillLabel">Nạp dữ liệu từ công việc (tuỳ chọn)</span>
+        <select id="formPrefillTask"><option value="" data-i18n="forms.noPrefill">— Không nạp —</option></select>
       </label>
     </div>
     <div id="formFieldsContainer" class="form-fields"></div>
     <div class="form-actions">
-      <button id="btnGenerateForm" class="btn btn-primary">⬇️ Tải xuống</button>
+      <button id="btnGenerateForm" class="btn btn-primary" data-i18n="forms.download">⬇️ Tải xuống</button>
     </div>
   </section>
 
   <!-- SETTINGS -->
   <section id="tab-settings" class="tab-panel">
-    <h1>Cài đặt kết nối GitHub</h1>
-    <p class="muted">Dữ liệu công việc được lưu dưới dạng GitHub Issues trên repo của công ty. Mỗi người dùng tự nhập Access Token của mình — token chỉ lưu trong trình duyệt của bạn (localStorage), không gửi đi đâu khác ngoài api.github.com.</p>
+    <h1 data-i18n="settings.title">Cài đặt kết nối GitHub</h1>
+    <p class="muted" data-i18n="settings.desc">Dữ liệu công việc được lưu dưới dạng GitHub Issues trên repo của công ty. Mỗi người dùng tự nhập Access Token của mình — token chỉ lưu trong trình duyệt của bạn (localStorage), không gửi đi đâu khác ngoài api.github.com.</p>
     <form id="settingsForm" class="settings-form">
-      <label>Tên công ty (hiển thị trên biểu mẫu) <input type="text" id="cfgCompany" placeholder="ví dụ: CÔNG TY TNHH ABC" /></label>
-      <label>Chủ repo (owner) <input type="text" id="cfgOwner" placeholder="ví dụ: mt-duy" required /></label>
-      <label>Tên repo <input type="text" id="cfgRepo" placeholder="ví dụ: AdminOps" required /></label>
-      <label>Personal Access Token (fine-grained, quyền Issues: Read & Write)
+      <label><span data-i18n="settings.company">Tên công ty (hiển thị trên biểu mẫu)</span> <input type="text" id="cfgCompany" placeholder="ví dụ: CÔNG TY TNHH ABC" /></label>
+      <label><span data-i18n="settings.owner">Chủ repo (owner)</span> <input type="text" id="cfgOwner" placeholder="ví dụ: mt-duy" required /></label>
+      <label><span data-i18n="settings.repo">Tên repo</span> <input type="text" id="cfgRepo" placeholder="ví dụ: AdminOps" required /></label>
+      <label><span data-i18n="settings.token">Personal Access Token (fine-grained, quyền Issues: Read & Write)</span>
         <input type="password" id="cfgToken" placeholder="github_pat_..." required /></label>
       <div class="settings-actions">
-        <button type="submit" class="btn btn-primary">💾 Lưu & Kết nối</button>
-        <button type="button" id="btnTestConn" class="btn">🔌 Kiểm tra kết nối</button>
-        <button type="button" id="btnClearToken" class="btn btn-danger">🗑️ Xoá token khỏi trình duyệt</button>
+        <button type="submit" class="btn btn-primary" data-i18n="settings.save">💾 Lưu & Kết nối</button>
+        <button type="button" id="btnTestConn" class="btn" data-i18n="settings.test">🔌 Kiểm tra kết nối</button>
+        <button type="button" id="btnClearToken" class="btn btn-danger" data-i18n="settings.clear">🗑️ Xoá token khỏi trình duyệt</button>
       </div>
     </form>
     <details class="help-box">
-      <summary>Hướng dẫn tạo Personal Access Token (1 lần)</summary>
+      <summary data-i18n="settings.help.summary">Hướng dẫn tạo Personal Access Token (1 lần)</summary>
       <ol>
-        <li>Vào GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
-        <li>Repository access: chọn đúng repo này (không chọn "All repositories").</li>
-        <li>Permissions → Issues: chọn "Read and write". (Không cần quyền nào khác.)</li>
-        <li>Tạo token, copy và dán vào ô trên. Token chỉ hoạt động cho riêng repo này.</li>
+        <li data-i18n="settings.help.1">Vào GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
+        <li data-i18n="settings.help.2">Repository access: chọn đúng repo này (không chọn "All repositories").</li>
+        <li data-i18n="settings.help.3">Permissions → Issues: chọn "Read and write". (Không cần quyền nào khác.)</li>
+        <li data-i18n="settings.help.4">Tạo token, copy và dán vào ô trên. Token chỉ hoạt động cho riêng repo này.</li>
       </ol>
     </details>
   </section>
@@ -107,6 +118,7 @@
 
 <div id="modalRoot"></div>
 
+<script src="i18n.js"></script>
 <script src="github.js"></script>
 <script src="templates.js"></script>
 <script src="app.js"></script>

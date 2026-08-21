@@ -5,6 +5,8 @@ App tĩnh (không backend, không cần cài đặt), chạy trực tiếp trên
 1. **Giao việc & theo dõi tiến độ** cho 8 nhóm quy trình của Trưởng phòng Hành chính (xem bộ SOP đầy đủ đi kèm) — dữ liệu lưu dưới dạng **GitHub Issues** của repo này, nên nhiều người (Trưởng phòng + nhân viên) đều thấy và cập nhật được, miễn là có quyền truy cập repo.
 2. **Xuất nhanh biểu mẫu Word (.doc) / Excel (.xls)** theo đúng thể thức hành chính Việt Nam (quốc hiệu tiêu ngữ, chữ ký các bên) — chạy hoàn toàn trong trình duyệt, không cần thư viện ngoài, không cần internet sau khi tải trang xong.
 
+Giao diện hỗ trợ song ngữ **VI / EN** (nút chuyển ở góc trên bên phải). Nội dung biểu mẫu Word/Excel xuất ra luôn giữ nguyên **tiếng Việt** dù đang chọn giao diện tiếng Anh, vì đây là văn bản hành chính phải tuân theo thể thức quy định của Việt Nam.
+
 ## Cách dùng nhanh
 
 ### Bước 1 — Thêm người dùng vào repo

@@ -118,3 +118,13 @@ table.task-table tr:hover td { background: #f7fafc; }
 @media (max-width: 640px) {
   .topbar { flex-direction: column; align-items: flex-start; }
 }
+
+.md-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 14px; }
+.md-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.md-card h3 { margin: 0 0 10px; color: var(--navy); font-size: 15px; }
+.md-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; margin-bottom: 10px; }
+.md-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+.md-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; padding: 2px 6px; }
+.md-remove:hover { background: #fdeceb; border-radius: 4px; }
+.md-add { display: flex; gap: 6px; }
+.md-add input { flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; }

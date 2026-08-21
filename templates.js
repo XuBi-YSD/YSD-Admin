@@ -2,6 +2,9 @@
  * Xuất biểu mẫu Word (.doc) / Excel (.xls) theo thể thức hành chính Việt Nam.
  * Kỹ thuật: HTML được Word/Excel nhận diện qua namespace "mso" — không cần thư viện ngoài,
  * chạy được 100% trên trình duyệt / GitHub Pages tĩnh.
+ *
+ * Tên file xuất ra theo quy ước: YYYYMMDD-NoiDung_vN.ext (N tự tăng nếu xuất
+ * trùng loại biểu mẫu trong cùng ngày — xem exportlog.js).
  */
 
 function escapeHtml(s) {
@@ -95,21 +98,25 @@ function signatureBlock(roles) {
 }
 
 function fieldLine(label, value, unit) {
+  if (!value) return "";
   return `<p><span class="bold">${escapeHtml(label)}:</span> ${escapeHtml(value)}${unit ? " " + escapeHtml(unit) : ""}</p>`;
 }
 
 // ---------------------------------------------------------------------------
 // FORM DEFINITIONS
+// Field types: text | textarea | select | date | droplist (source: employees|companies|partners|projects)
 // ---------------------------------------------------------------------------
 const FORM_DEFS = [
   {
     id: "purchase_request",
+    slug: "PhieuDeNghiMuaSam",
     label: "Phiếu đề nghị mua sắm (SOP #2)",
     labelEn: "Purchase Request Form (SOP #2)",
     kind: "doc",
     fields: [
       { key: "department", label: "Phòng ban đề nghị", labelEn: "Requesting department", type: "text", required: true },
-      { key: "requester", label: "Người đề nghị", labelEn: "Requester", type: "text", required: true },
+      { key: "requester", label: "Người đề nghị", labelEn: "Requester", type: "droplist", source: "employees", required: true },
+      { key: "vendor", label: "Nhà cung cấp / Đối tác (nếu đã biết)", labelEn: "Vendor / Partner (if known)", type: "droplist", source: "partners" },
       { key: "itemName", label: "Tên hàng hoá / dịch vụ", labelEn: "Item / service name", type: "text", required: true },
       { key: "quantity", label: "Số lượng", labelEn: "Quantity", type: "text" },
       { key: "estCost", label: "Chi phí dự kiến (VNĐ)", labelEn: "Estimated cost (VND)", type: "text" },
@@ -121,6 +128,7 @@ const FORM_DEFS = [
         <div class="title">Phiếu đề nghị mua sắm</div>
         ${fieldLine("Phòng ban đề nghị", d.department)}
         ${fieldLine("Người đề nghị", d.requester)}
+        ${fieldLine("Nhà cung cấp / Đối tác", d.vendor)}
         ${fieldLine("Tên hàng hoá / dịch vụ", d.itemName)}
         ${fieldLine("Số lượng", d.quantity)}
         ${fieldLine("Chi phí dự kiến", d.estCost, "VNĐ")}
@@ -129,17 +137,18 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Người đề nghị", "Trưởng phòng liên quan", "Trưởng phòng Hành chính"])}
       `;
-      downloadDoc(`PhieuDeNghiMuaSam_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "repair_request",
+    slug: "PhieuYeuCauSuaChua",
     label: "Phiếu yêu cầu sửa chữa (SOP #1)",
     labelEn: "Repair Request Form (SOP #1)",
     kind: "doc",
     fields: [
       { key: "location", label: "Vị trí / khu vực", labelEn: "Location / area", type: "text", required: true },
-      { key: "requester", label: "Người báo hỏng", labelEn: "Reported by", type: "text", required: true },
+      { key: "requester", label: "Người báo hỏng", labelEn: "Reported by", type: "droplist", source: "employees", required: true },
       { key: "issue", label: "Mô tả sự cố / hư hỏng", labelEn: "Issue description", type: "textarea", full: true, required: true },
       { key: "priority", label: "Mức ưu tiên", labelEn: "Priority", type: "select", options: ["Bình thường", "Khẩn cấp"] },
     ],
@@ -155,16 +164,18 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Người báo hỏng", "Nhân viên Hành chính", "Trưởng phòng Hành chính"])}
       `;
-      downloadDoc(`PhieuYeuCauSuaChua_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "travel_request",
+    slug: "DeNghiCongTac",
     label: "Đề nghị đi công tác (SOP #4)",
     labelEn: "Business Travel Request (SOP #4)",
     kind: "doc",
     fields: [
-      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "text", required: true },
+      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "droplist", source: "employees", required: true },
+      { key: "project", label: "Dự án liên quan (nếu có)", labelEn: "Related project (if any)", type: "droplist", source: "projects" },
       { key: "destination", label: "Nơi công tác", labelEn: "Destination", type: "text", required: true },
       { key: "fromDate", label: "Từ ngày", labelEn: "From date", type: "date", required: true },
       { key: "toDate", label: "Đến ngày", labelEn: "To date", type: "date", required: true },
@@ -176,6 +187,7 @@ const FORM_DEFS = [
         ${vnHeader(ctx.company, ctx.formCode)}
         <div class="title">Đề nghị đi công tác</div>
         ${fieldLine("Họ tên nhân viên", d.employee)}
+        ${fieldLine("Dự án liên quan", d.project)}
         ${fieldLine("Nơi công tác", d.destination)}
         ${fieldLine("Thời gian", `${d.fromDate || "..."} đến ${d.toDate || "..."}`)}
         ${fieldLine("Ngân sách dự kiến", d.budget, "VNĐ")}
@@ -184,16 +196,17 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Người đề nghị", "Quản lý trực tiếp", "Trưởng phòng Hành chính"])}
       `;
-      downloadDoc(`DeNghiCongTac_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "advance_request",
+    slug: "GiayDeNghiTamUng",
     label: "Giấy đề nghị tạm ứng",
     labelEn: "Cash Advance Request",
     kind: "doc",
     fields: [
-      { key: "employee", label: "Họ tên người đề nghị", labelEn: "Requester name", type: "text", required: true },
+      { key: "employee", label: "Họ tên người đề nghị", labelEn: "Requester name", type: "droplist", source: "employees", required: true },
       { key: "department", label: "Bộ phận", labelEn: "Department", type: "text" },
       { key: "amount", label: "Số tiền đề nghị tạm ứng (VNĐ)", labelEn: "Advance amount (VND)", type: "text", required: true },
       { key: "amountWords", label: "Số tiền bằng chữ", labelEn: "Amount in words", type: "text" },
@@ -212,17 +225,19 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Người đề nghị", "Kế toán", "Trưởng phòng Hành chính / Giám đốc"])}
       `;
-      downloadDoc(`GiayDeNghiTamUng_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "handover_minutes",
+    slug: "BienBanBanGiao",
     label: "Biên bản bàn giao",
     labelEn: "Handover Minutes",
     kind: "doc",
     fields: [
-      { key: "partyA", label: "Bên giao", labelEn: "Handing-over party", type: "text", required: true },
-      { key: "partyB", label: "Bên nhận", labelEn: "Receiving party", type: "text", required: true },
+      { key: "partyA", label: "Bên giao", labelEn: "Handing-over party", type: "droplist", source: "employees", required: true },
+      { key: "partyB", label: "Bên nhận", labelEn: "Receiving party", type: "droplist", source: "employees", required: true },
+      { key: "relatedCompany", label: "Công ty / đơn vị liên quan (nếu có)", labelEn: "Related company / unit (if any)", type: "droplist", source: "companies" },
       { key: "content", label: "Nội dung bàn giao", labelEn: "Handover content", type: "textarea", full: true, required: true },
       { key: "location", label: "Địa điểm bàn giao", labelEn: "Location", type: "text" },
     ],
@@ -232,6 +247,7 @@ const FORM_DEFS = [
         <div class="title">Biên bản bàn giao</div>
         ${fieldLine("Bên giao", d.partyA)}
         ${fieldLine("Bên nhận", d.partyB)}
+        ${fieldLine("Công ty / đơn vị liên quan", d.relatedCompany)}
         ${fieldLine("Địa điểm", d.location)}
         <p class="bold">Nội dung bàn giao:</p>
         <p>${nl2br(d.content)}</p>
@@ -239,16 +255,18 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Bên giao", "Bên nhận", "Trưởng phòng Hành chính (chứng kiến)"])}
       `;
-      downloadDoc(`BienBanBanGiao_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "meeting_minutes",
+    slug: "BienBanHop",
     label: "Biên bản họp / làm việc",
     labelEn: "Meeting Minutes",
     kind: "doc",
     fields: [
       { key: "topic", label: "Nội dung cuộc họp", labelEn: "Meeting topic", type: "text", required: true },
+      { key: "project", label: "Dự án liên quan (nếu có)", labelEn: "Related project (if any)", type: "droplist", source: "projects" },
       { key: "attendees", label: "Thành phần tham dự", labelEn: "Attendees", type: "textarea", full: true },
       { key: "content", label: "Nội dung / Kết luận", labelEn: "Content / Conclusion", type: "textarea", full: true, required: true },
     ],
@@ -257,6 +275,7 @@ const FORM_DEFS = [
         ${vnHeader(ctx.company, ctx.formCode)}
         <div class="title">Biên bản họp</div>
         ${fieldLine("Nội dung cuộc họp", d.topic)}
+        ${fieldLine("Dự án liên quan", d.project)}
         <p class="bold">Thành phần tham dự:</p>
         <p>${nl2br(d.attendees)}</p>
         <p class="bold">Nội dung / Kết luận:</p>
@@ -264,16 +283,17 @@ const FORM_DEFS = [
         ${vnDateLine()}
         ${signatureBlock(["Người ghi biên bản", "Chủ trì cuộc họp"])}
       `;
-      downloadDoc(`BienBanHop_${dstamp()}.doc`, body);
+      downloadDoc(ctx.fileName, body);
     },
   },
   {
     id: "timekeeping_sheet",
+    slug: "BangChamCong",
     label: "Bảng chấm công tháng (Excel)",
     labelEn: "Monthly Timekeeping Sheet (Excel)",
     kind: "xls",
     fields: [
-      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "text", required: true },
+      { key: "employee", label: "Họ tên nhân viên", labelEn: "Employee name", type: "droplist", source: "employees", required: true },
       { key: "department", label: "Bộ phận", labelEn: "Department", type: "text" },
       { key: "month", label: "Tháng", labelEn: "Month", type: "text", placeholder: "vd: 08/2026", required: true },
     ],
@@ -292,11 +312,12 @@ const FORM_DEFS = [
         </table>
         <p class="small">Ký hiệu: X = đi làm, P = nghỉ phép, K = nghỉ không lương, L = nghỉ lễ, CT = công tác</p>
       `;
-      downloadXls(`BangChamCong_${(d.employee || "").replace(/\s+/g, "")}_${dstamp()}.xls`, "ChamCong", body);
+      downloadXls(ctx.fileName, "ChamCong", body);
     },
   },
   {
     id: "inventory_count",
+    slug: "BienBanKiemKe",
     label: "Biên bản kiểm kê tài sản (Excel)",
     labelEn: "Asset Inventory Count Sheet (Excel)",
     kind: "xls",
@@ -319,11 +340,7 @@ const FORM_DEFS = [
           ${rows}
         </table>
       `;
-      downloadXls(`BienBanKiemKe_${dstamp()}.xls`, "KiemKe", body);
+      downloadXls(ctx.fileName, "KiemKe", body);
     },
   },
 ];
-
-function dstamp() {
-  return new Date().toISOString().slice(0, 10);
-}

@@ -28,6 +28,8 @@ function switchTab(tab) {
   if (tab === "dashboard") renderDashboard();
   if (tab === "tasks") renderTasks();
   if (tab === "forms") renderFormsTab();
+  if (tab === "masterdata") renderMasterDataTab();
+  if (tab === "exportHistory") renderExportHistoryTab();
 }
 
 // called by i18n.js whenever the language toggle changes
@@ -36,6 +38,8 @@ function onLangChange() {
   renderDashboard();
   if (document.getElementById("tab-tasks").classList.contains("active")) renderTasks();
   if (document.getElementById("tab-forms").classList.contains("active")) renderFormsTab();
+  if (document.getElementById("tab-masterdata").classList.contains("active")) renderMasterDataTab();
+  if (document.getElementById("tab-exportHistory").classList.contains("active")) renderExportHistoryTab();
 }
 
 // ---------------- init / connection ----------------
@@ -75,9 +79,17 @@ async function loadAll() {
   } catch (e) {
     console.error(e);
   }
+  try {
+    await Promise.all([MasterData.load(api), ExportLog.load(api)]);
+  } catch (e) {
+    console.error("Could not load master data / export log:", e);
+  }
   populateFilterOptions();
   renderDashboard();
   if (document.getElementById("tab-tasks").classList.contains("active")) renderTasks();
+  if (document.getElementById("tab-forms").classList.contains("active")) renderFormsTab();
+  if (document.getElementById("tab-masterdata").classList.contains("active")) renderMasterDataTab();
+  if (document.getElementById("tab-exportHistory").classList.contains("active")) renderExportHistoryTab();
 }
 
 function populateFilterOptions() {
@@ -246,6 +258,7 @@ function renderFormFields() {
   container.innerHTML = def.fields.map((f) => {
     const fullCls = f.full ? "full" : "";
     const lbl = fieldLabel(f);
+    if (f.type === "droplist") return renderDroplistField(f, fullCls, lbl);
     if (f.type === "textarea") return `<label class="${fullCls}">${lbl}<textarea id="ff_${f.key}" rows="3"></textarea></label>`;
     if (f.type === "select") return `<label class="${fullCls}">${lbl}<select id="ff_${f.key}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></label>`;
     return `<label class="${fullCls}">${lbl}<input id="ff_${f.key}" type="${f.type === "date" ? "date" : "text"}" placeholder="${f.placeholder || ""}" /></label>`;
@@ -258,26 +271,62 @@ document.getElementById("formPrefillTask").addEventListener("change", (e) => {
   const issue = allIssues.find((i) => String(i.number) === num);
   if (!issue) return;
   const { description, dueDate } = parseIssueBody(issue.body);
-  const guesses = { requester: currentUser, employee: currentUser, reason: description, purpose: description, issue: description, content: description, itemName: issue.title, topic: issue.title, fromDate: dueDate, toDate: dueDate };
+  const guesses = { reason: description, purpose: description, issue: description, content: description, itemName: issue.title, topic: issue.title, fromDate: dueDate, toDate: dueDate };
   Object.entries(guesses).forEach(([k, v]) => {
     const el = document.getElementById("ff_" + k);
     if (el && v) el.value = v;
   });
 });
 
-document.getElementById("btnGenerateForm").addEventListener("click", () => {
+let _generatingForm = false;
+document.getElementById("btnGenerateForm").addEventListener("click", async () => {
+  if (_generatingForm) return; // guard against double-click / double-fire creating duplicate export-log entries
+  _generatingForm = true;
+  const btn = document.getElementById("btnGenerateForm");
+  btn.disabled = true;
+  try {
+    await doGenerateForm();
+  } finally {
+    _generatingForm = false;
+    btn.disabled = false;
+  }
+});
+async function doGenerateForm() {
   const def = FORM_DEFS.find((f) => f.id === document.getElementById("formType").value);
   const data = {};
   let missing = [];
+  const newDroplistValues = []; // { category, value } typed inline via "+ Add new"
   def.fields.forEach((f) => {
-    const el = document.getElementById("ff_" + f.key);
-    data[f.key] = el ? el.value : "";
+    if (f.type === "droplist") {
+      data[f.key] = readDroplistValue(f);
+      const sel = document.getElementById("ff_" + f.key);
+      if (sel && sel.value === "__other__" && data[f.key]) newDroplistValues.push({ category: f.source, value: data[f.key] });
+    } else {
+      const el = document.getElementById("ff_" + f.key);
+      data[f.key] = el ? el.value : "";
+    }
     if (f.required && !data[f.key]) missing.push(fieldLabel(f));
   });
   if (missing.length) { alert(t("alert.missingFields", { fields: missing.join(", ") })); return; }
+
   const cfg = GitHubStore.getConfig();
-  def.generate(data, { company: cfg.company || "", formCode: "" });
-});
+  const today = dstamp();
+  let fileName;
+  if (api && ExportLog._loaded) {
+    const version = ExportLog.nextVersion(def.slug, today);
+    fileName = `${today}-${def.slug}_v${version}.${def.kind}`;
+  } else {
+    fileName = `${today}-${def.slug}_v1.${def.kind}`;
+  }
+
+  def.generate(data, { company: cfg.company || "", formCode: "", fileName });
+
+  if (api) {
+    await ExportLog.record(api, { slug: def.slug, formLabel: def.label, fileName, user: currentUser });
+    for (const nv of newDroplistValues) await MasterData.quickAdd(api, nv.category, nv.value);
+    if (document.getElementById("tab-exportHistory").classList.contains("active")) renderExportHistoryTab();
+  }
+}
 
 // ---------------- settings ----------------
 function loadSettingsForm() {
@@ -317,6 +366,7 @@ document.getElementById("btnClearToken").addEventListener("click", () => {
   document.getElementById("connStatus").textContent = t("conn.none");
 });
 document.getElementById("btnRefreshDash").addEventListener("click", loadAll);
+document.getElementById("btnSaveMasterData").addEventListener("click", mdSaveAll);
 
 // ---------------- boot ----------------
 (function boot() {

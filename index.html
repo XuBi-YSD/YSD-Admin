@@ -14,6 +14,8 @@
     <button class="tab-btn active" data-tab="dashboard" data-i18n="nav.dashboard">Bảng điều khiển</button>
     <button class="tab-btn" data-tab="tasks" data-i18n="nav.tasks">Công việc</button>
     <button class="tab-btn" data-tab="forms" data-i18n="nav.forms">Biểu mẫu</button>
+    <button class="tab-btn" data-tab="masterdata" data-i18n="nav.masterdata">Danh mục</button>
+    <button class="tab-btn" data-tab="exportHistory" data-i18n="nav.exportHistory">Lịch sử xuất</button>
     <button class="tab-btn" data-tab="settings" data-i18n="nav.settings">Cài đặt</button>
   </nav>
   <div class="lang-switch">
@@ -88,6 +90,29 @@
     </div>
   </section>
 
+  <!-- MASTER DATA -->
+  <section id="tab-masterdata" class="tab-panel">
+    <h1 data-i18n="md.title">Danh mục dùng chung (Droplist)</h1>
+    <p class="muted" data-i18n="md.desc">Các danh sách này dùng chung cho mọi người qua repo GitHub. Thêm/xoá rồi bấm "Lưu danh mục" để mọi người cùng thấy. Cũng có thể thêm nhanh ngay khi điền biểu mẫu (chọn "+ Thêm mới...").</p>
+    <div id="masterDataContainer" class="md-grid"></div>
+    <div class="form-actions">
+      <button id="btnSaveMasterData" class="btn btn-primary" data-i18n="md.saveAllBtn">💾 Lưu danh mục</button>
+    </div>
+  </section>
+
+  <!-- EXPORT HISTORY -->
+  <section id="tab-exportHistory" class="tab-panel">
+    <h1 data-i18n="export.title">Lịch sử xuất biểu mẫu</h1>
+    <p class="muted" data-i18n="export.desc">Ghi lại mỗi lần xuất biểu mẫu: ai xuất, khi nào, tên file gì — lưu chung trên GitHub.</p>
+    <table class="task-table" id="exportLogTable">
+      <thead><tr>
+        <th data-i18n="export.col.time">Thời gian</th><th data-i18n="export.col.form">Loại biểu mẫu</th>
+        <th data-i18n="export.col.file">Tên file</th><th data-i18n="export.col.user">Người xuất</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
   <!-- SETTINGS -->
   <section id="tab-settings" class="tab-panel">
     <h1 data-i18n="settings.title">Cài đặt kết nối GitHub</h1>
@@ -96,7 +121,7 @@
       <label><span data-i18n="settings.company">Tên công ty (hiển thị trên biểu mẫu)</span> <input type="text" id="cfgCompany" placeholder="ví dụ: CÔNG TY TNHH ABC" /></label>
       <label><span data-i18n="settings.owner">Chủ repo (owner)</span> <input type="text" id="cfgOwner" placeholder="ví dụ: mt-duy" required /></label>
       <label><span data-i18n="settings.repo">Tên repo</span> <input type="text" id="cfgRepo" placeholder="ví dụ: AdminOps" required /></label>
-      <label><span data-i18n="settings.token">Personal Access Token (fine-grained, quyền Issues: Read & Write)</span>
+      <label><span data-i18n="settings.token">Personal Access Token (fine-grained, quyền Issues + Contents: Read & Write)</span>
         <input type="password" id="cfgToken" placeholder="github_pat_..." required /></label>
       <div class="settings-actions">
         <button type="submit" class="btn btn-primary" data-i18n="settings.save">💾 Lưu & Kết nối</button>
@@ -120,6 +145,8 @@
 
 <script src="i18n.js"></script>
 <script src="github.js"></script>
+<script src="masterdata.js"></script>
+<script src="exportlog.js"></script>
 <script src="templates.js"></script>
 <script src="app.js"></script>
 </body>

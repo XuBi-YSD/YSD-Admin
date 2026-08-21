@@ -117,6 +117,69 @@ class GitHubAPI {
       return null;
     }
   }
+
+  // ---- shared JSON data files (master data droplists, export log) ----
+  // Stored as real files in the repo via the Contents API, so every
+  // collaborator with a token that has "Contents: Read and write" sees the
+  // same data. Requires that extra token permission (Issues alone is not enough).
+
+  async getFileRaw(path) {
+    return this._fetch(`/repos/${this.owner}/${this.repo}/contents/${path}`);
+  }
+
+  async putFileRaw(path, base64Content, sha, message) {
+    const body = { message, content: base64Content };
+    if (sha) body.sha = sha;
+    return this._fetch(`/repos/${this.owner}/${this.repo}/contents/${path}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async loadJsonFile(path, fallback) {
+    try {
+      const res = await this.getFileRaw(path);
+      return { data: JSON.parse(base64ToUtf8(res.content)), sha: res.sha };
+    } catch (e) {
+      if (/GitHub API 404/.test(e.message)) return { data: fallback, sha: null };
+      throw e;
+    }
+  }
+
+  async saveJsonFile(path, obj, sha, message) {
+    return this.putFileRaw(path, utf8ToBase64(JSON.stringify(obj, null, 2)), sha, message);
+  }
+
+  /**
+   * Read-modify-write with automatic retry on 409 (someone else saved in
+   * between). mutatorFn receives the current data (or `fallback` on first
+   * run) and must return the new data to save.
+   */
+  async updateJsonFile(path, fallback, mutatorFn, message) {
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data, sha } = await this.loadJsonFile(path, fallback);
+      const updated = mutatorFn(structuredCloneCompat(data));
+      try {
+        return await this.saveJsonFile(path, updated, sha, message);
+      } catch (e) {
+        lastErr = e;
+        if (/GitHub API 409/.test(e.message) && attempt < 2) continue;
+        throw e;
+      }
+    }
+    throw lastErr;
+  }
+}
+
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g, ""))));
+}
+function structuredCloneCompat(obj) {
+  return typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 }
 
 // ---- shared task/issue body convention ----
